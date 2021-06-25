@@ -1,6 +1,10 @@
 {
   "name": "captionthingv2",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HexCodeFFF/captionthing.git"
+  },
   "description": "hi",
   "main": "index.js",
   "scripts": {
@@ -20,6 +24,7 @@
     "electron": "^13.1.4"
   },
   "dependencies": {
+    "electron-builder": "^22.11.7",
     "electron-squirrel-startup": "^1.0.0",
     "update-electron-app": "^2.0.1"
   },
