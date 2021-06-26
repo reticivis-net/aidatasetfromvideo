@@ -6,9 +6,12 @@ const {
     contextBridge,
     ipcRenderer
 } = require("electron");
-
+const fs = require("fs");
 contextBridge.exposeInMainWorld("electron", {
     checkvideostreams: (filepath) => {
         return ipcRenderer.invoke('check-video-streams', filepath)
-    }
+    },
+    ripsub: (filepath) => {
+        return ipcRenderer.invoke('ripsub', filepath)
+    },
 })

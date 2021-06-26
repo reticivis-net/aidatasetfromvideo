@@ -15,12 +15,9 @@
     <link href="main.css" rel="stylesheet">
 </head>
 <body>
-<div class="container">
-
-</div>
-
+    <div id="videocont"></div>
+    <div id="captioncont">
+        <p><i class="fad fa-spinner-third fa-spin"></i> Loading...</p>
+    </div>
 </body>
 </html>
-<script>
-    document.body.innerHTML = `<video src="${new URLSearchParams(window.location.search).get("file")}" controls autoplay>`;
-</script>

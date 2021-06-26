@@ -26,8 +26,13 @@ function handleDrop(e) {
 // const {ipcRenderer} = require('electron');
 
 function handleFileUpload(filelist) {
-    if (filelist.length !== 1) {
+    if (filelist.length > 1) {
         document.querySelector("#error-message").innerHTML = "Too many files!";
+        errorshake();
+        return
+    }
+    if (filelist.length < 1) {
+        document.querySelector("#error-message").innerHTML = "Too few files!";
         errorshake();
         return
     }
