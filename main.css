@@ -131,4 +131,8 @@ body, html {
 
 .char {
     padding: 10px;
+    cursor:pointer;
+}
+.char:hover {
+    filter: brightness(75%);
 }
