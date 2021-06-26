@@ -68,7 +68,7 @@ function getSubtitleStream(filename, callback) {
 
 function ripsub(filepath, callback) {
     const tagpattern = /<[^>]*?>/g;
-    const bracketpattern = /\[[^[]*\]/g;
+    const bracketpattern = /\[[^[]*]/g;
     const dashpattern = /^[-‐]/mg;
     const newlinepattern = /[\n\r]{2,}/g;
     getSubtitleStream(filepath, rawsubdata => {
@@ -80,12 +80,15 @@ function ripsub(filepath, callback) {
                 .replace(newlinepattern, "\n")
             return sub
         });
+        subs = subs.filter(sub => {
+            return sub.data.text !== ""
+        })
         callback(null, subs);
     });
 }
 
 function getvideodata(video, callback) {
-    child_process.exec("ffprobe -show_format -show_streams -print_format json -loglevel error " + video, (error, stdout, stderr) => {
+    child_process.exec(`ffprobe -show_format -show_streams -print_format json -loglevel error "${video}"`, (error, stdout, stderr) => {
         if (error) {
             callback(error, null);
         }

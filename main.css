@@ -99,19 +99,36 @@ video {
     max-height: 100%;
     margin: auto;
 }
+
 body, html {
     height: 100%;
     width: 100%;
 }
+
+#videocont, #captioncont, #charcont {
+    width: 100%;
+}
+
 #videocont, #captioncont {
-    height: 50%;
     padding: 10px;
 }
+
 #videocont {
+    height: 50%;
     display: flex;
     justify-content: center;
 }
-#captioncont {
+
+#captioncont, #charcont {
     text-align: center;
     font-size: 36px;
+    height: 25%;
+}
+
+#charcont .row {
+    height: 100%;
+}
+
+.char {
+    padding: 10px;
 }
