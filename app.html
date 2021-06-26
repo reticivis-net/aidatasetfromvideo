@@ -11,12 +11,16 @@
     <script src="fontawesome.min.js"></script>
     <link href="gradients.css" rel="stylesheet">
 
-    <script src="main.js"></script>
+    <script src="app.js"></script>
     <link href="main.css" rel="stylesheet">
 </head>
 <body>
 <div class="container">
-    <button type="button" class="btn btn-primary btn-lg">Large button</button>
+
 </div>
+
 </body>
 </html>
+<script>
+    document.body.innerHTML = `<video src="${new URLSearchParams(window.location.search).get("file")}" controls autoplay>`;
+</script>

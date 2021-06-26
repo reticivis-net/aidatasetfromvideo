@@ -1,0 +1,87 @@
+.hvcenter {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+:root {
+    --border-dance-color:#fff8;
+}
+.borderdance {
+    background-image: linear-gradient(90deg, var(--border-dance-color) 50%, transparent 50%), linear-gradient(90deg, var(--border-dance-color) 50%, transparent 50%), linear-gradient(0deg, var(--border-dance-color) 50%, transparent 50%), linear-gradient(0deg, var(--border-dance-color) 50%, transparent 50%);
+    background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+    background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
+    background-position: left top, right bottom, left bottom, right   top;
+    animation: border-dance 1s infinite linear;
+    transition: animation-duration 1s ease-in-out;
+}
+.highlight.borderdance {
+    animation-duration: 0.2s;
+}
+.borderdance-under {
+    background-size: 0, 15px 2px, 0, 0;
+    animation-direction: reverse;
+}
+@keyframes border-dance {
+    0% {
+        background-position: left top, right bottom, left bottom, right   top;
+    }
+    100% {
+        background-position: left 15px top, right 15px bottom , left bottom 15px , right   top 15px;
+    }
+}
+@keyframes red-fade {
+    0% {
+        color:var(--red);
+    }
+    100% {
+        color:white;
+    }
+}
+@keyframes shakeX {
+    from,
+    to {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        -webkit-transform: translate3d(-10px, 0, 0);
+        transform: translate3d(-10px, 0, 0);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        -webkit-transform: translate3d(10px, 0, 0);
+        transform: translate3d(10px, 0, 0);
+    }
+}
+.error-shake {
+    animation: red-fade 0.5s 1 ease-in, shakeX 0.5s 1 ease;
+}
+.dance-holder {
+    position: fixed; /* Sit on top of the page content */
+    /*width: 100%; !* Full width (cover the whole page) *!*/
+    /*height: 100%; !* Full height (cover the whole page) *!*/
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+}
+input[type="file"] {
+    display: none;
+}
+.custom-file-upload {
+    cursor: pointer;
+}
+video {
+    width: 100%;
+}
