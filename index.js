@@ -47,7 +47,6 @@ app.on('window-all-closed', function () {
 // code. You can also put them in separate files and require them here.
 const child_process = require("child_process");
 const util = require('util');
-const ripsubtitles = require("rip-subtitles");
 const subtitle = require("subtitle");
 
 ipcMain.handle('check-video-streams', async (event, args) => {
@@ -70,18 +69,18 @@ function ripsub(filepath, callback) {
     const tagpattern = /<[^>]*?>/g;
     const bracketpattern = /\[[^[]*]/g;
     const dashpattern = /^[-‐]/mg;
-    const newlinepattern = /[\n\r]{2,}/g;
+    const newlinepattern = /[\n\r]+/g;
     getSubtitleStream(filepath, rawsubdata => {
         let subs = subtitle.parseSync(rawsubdata);
         subs = subs.map(sub => {
             sub.data.text = sub.data.text.replace(tagpattern, "")
                 .replace(bracketpattern, "")
                 .replace(dashpattern, "")
-                .replace(newlinepattern, "\n")
+                .replace(newlinepattern, " ")
             return sub
         });
         subs = subs.filter(sub => {
-            return sub.data.text !== ""
+            return sub.data.text.replace(/\s/, "") !== ""
         })
         callback(null, subs);
     });
