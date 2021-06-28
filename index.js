@@ -51,13 +51,27 @@ const subtitle = require("subtitle");
 
 // handle events called from renderer
 ipcMain.handle('check-video-streams', async (event, args) => {
+    // this event gets data about the video to validate it has video, audio, and subtitles
     const prom = util.promisify(getvideodata);
     return await prom(args);
 })
 ipcMain.handle('ripsub', async (event, args) => {
+    // this event rips and parses the subtitles from a video file
     const prom = util.promisify(ripsub);
     return await prom(args);
 })
+ipcMain.handle('export-data', async (event, args) => {
+    // this event rips and parses the subtitles from a video file
+    const prom = util.promisify(export_final);
+    return await prom([event, args]);
+})
+
+function export_final(data, callback) {
+    // ipcMain.
+    let [event, args] = data;
+    console.log(event, args);
+    callback(null, "hello!")
+}
 
 function getSubtitleStream(filename, callback) {
     // send raw srt subtitles to callback()

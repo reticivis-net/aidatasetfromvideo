@@ -100,7 +100,7 @@ video {
     margin: auto;
 }
 
-body, html {
+body, html, #allcont {
     height: 100%;
     width: 100%;
 }

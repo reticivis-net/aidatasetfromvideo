@@ -22,13 +22,19 @@
     </div>
     <div class="container-fluid" id="charcont">
         <div class="row">
-            <div class="col char bg-danger" data-bs-custom-class="char-tooltip" data-bs-placement="top"
-                 data-bs-toggle="tooltip" id="do-not-assign" title="Do not assign this sentence to anyone.">
+            <div class="col char bg-secondary d-none" data-bs-toggle="tooltip" id="undo"
+                 title="Undo the last assignment.">
+                <i class="fas fa-user-times"></i>
+            </div>
+            <div class="col char bg-danger" data-bs-toggle="tooltip" id="do-not-assign"
+                 title="Do not assign this sentence to anyone.">
                 <i class="fas fa-user-slash"></i>
             </div>
-            <div class="col char bg-success" data-bs-custom-class="char-tooltip" data-bs-placement="top"
-                 data-bs-toggle="tooltip" id="new-char" title="Assign to a new character.">
+            <div class="col char bg-success" data-bs-toggle="tooltip" id="new-char" title="Assign to a new character.">
                 <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="col char bg-primary d-none" data-bs-toggle="tooltip" id="complete" title="Export data.">
+                <i class="fas fa-download"></i>
             </div>
         </div>
     </div>

@@ -1,13 +1,13 @@
 // get video URL, passed through GET params
 const videourl = new URLSearchParams(window.location.search).get("file");
 
-// TODO: replace current_sub_index with char_data.length
+
 let current_sub_index = 0;
 let char_data = [];
 
 
 function export_data(captions) {
-
+    window.electron.ipcinvoke("export-data", [captions, char_data]).then(r => console.log)
 }
 
 // extracting subtitles requires FFMPEG, must be performed by main thread
@@ -15,8 +15,6 @@ function export_data(captions) {
 window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
     console.log("Captions:", subtitles);
     $(() => { // waits for DOM to load, if it hasnt it runs immediately (i think?)
-        // char is short for character, not letters but people.
-        let num_of_chars = 0;
         // hovering over a character has a dynamically generated tooltip displaying name, # of lines, and s of data
         // dynamically generated because its easier than keeping track each operation (thanks undo)
         function char_tooltip(index) {
@@ -40,35 +38,54 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
 
         // current_sub_index++ except if we hit the end
         function nextsub() {
-            console.log(subtitles);
             if (current_sub_index + 1 >= subtitles.length) { // there are no more subtitles to assign, we are finished.
                 bootbox.alert("Sorted entire video!")
                 export_data(subtitles);
             } else {
                 current_sub_index++;
             }
-
         }
 
-        // adds undo button, having it exist on the first caption is confusing and i really should just have it hidden oh well
-        function addundobutton() {
-            // add undo button html
-            document.querySelector("#do-not-assign").insertAdjacentHTML("beforebegin", undo_html);
-            // add click event
-            document.querySelector("#undo").onclick = () => {
-                // decrement current sub and remove its assignment
-                current_sub_index--;
-                subtitles[current_sub_index].assigned_to = undefined;
-
-                if (current_sub_index === 0) { // if we're back to sub 0, remove button
-                    document.querySelector("#undo").remove();
-                    refreshtooltips();
+        // add click event for finish early button
+        document.querySelector("#complete").onclick = () => {
+            bootbox.confirm({
+                title: "<i class=\"fas fa-download\"></i> Export data",
+                closeButton: false,
+                centerVertical: true,
+                message: "Are you sure you want to end the video early and export the data now? Exporting will be automatically triggered when the video ends.",
+                buttons: {
+                    confirm: {
+                        label: 'Yes',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'No',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: result => {
+                    // result is just true or false
+                    if (result) {
+                        export_data(subtitles);
+                    }
                 }
-                // play video from new (old?) sub
-                video.currentTime = subtitles[current_sub_index].data.start / 1000;
-                video.play();
+            });
+        }
+
+        // add click event for undo button
+        document.querySelector("#undo").onclick = () => {
+            // decrement current sub and remove its assignment
+            current_sub_index--;
+            subtitles[current_sub_index].assigned_to = undefined;
+
+            if (current_sub_index === 0) { // if we're back to sub 0, remove button
+                document.querySelector("#undo").classList.add("d-none");
+                document.querySelector("#complete").classList.add("d-none");
+                refreshtooltips();
             }
-            refreshtooltips();
+            // play video from new (old?) sub
+            video.currentTime = subtitles[current_sub_index].data.start / 1000;
+            video.play();
         }
 
         // replay current sub on clicking the video
@@ -81,7 +98,8 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
             // assign current caption to nobody and increment sub
             subtitles[current_sub_index].assigned_to = null;
             if (current_sub_index === 0) {
-                addundobutton();
+                document.querySelector("#undo").classList.remove("d-none");
+                document.querySelector("#complete").classList.remove("d-none");
             }
             nextsub()
             video.play();
@@ -92,7 +110,8 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
             // assign current sub to this char and increment sub
             subtitles[current_sub_index].assigned_to = index;
             if (current_sub_index === 0) {
-                addundobutton();
+                document.querySelector("#undo").classList.remove("d-none");
+                document.querySelector("#complete").classList.remove("d-none");
             }
             nextsub();
             // update tooltip contents
@@ -129,21 +148,22 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
                 callback: (name) => {
                     // blank name seems annoying/confusing
                     if (!name) {
-                        name = `Character #${num_of_chars}`
+                        name = `Character #${char_data.length}`
                     }
                     // just in case?
                     name = name.replace("\"", "");
                     // assign current sub to this new char
-                    subtitles[current_sub_index].assigned_to = num_of_chars;
+                    subtitles[current_sub_index].assigned_to = char_data.length;
                     if (current_sub_index === 0) {
-                        addundobutton();
+                        document.querySelector("#undo").classList.remove("d-none");
+                        document.querySelector("#complete").classList.remove("d-none");
                     }
                     // create new char box
                     document.querySelector("#new-char").insertAdjacentHTML("beforebegin",
-                        make_char_box(num_of_chars, name));
+                        make_char_box(char_data.length, name));
                     // assign it a click event and tooltip
-                    let thischar = document.querySelector(`#char-${num_of_chars}`);
-                    thischar.onclick = construct_char_event(num_of_chars);
+                    let thischar = document.querySelector(`#char-${char_data.length}`);
+                    thischar.onclick = construct_char_event(char_data.length);
                     new bootstrap.Tooltip(thischar, {
                         placement: "top",
                         title: char_tooltip,
@@ -153,10 +173,8 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
                     // add its name to char_data
                     char_data.push({
                         name: name,
-                        index: num_of_chars,
+                        index: char_data.length,
                     })
-                    // num_of_chars is more really the index to use for the next char
-                    num_of_chars++;
                     // increment sub and continue
                     nextsub();
                     video.play();
@@ -210,15 +228,12 @@ function refreshtooltips() {
     });
     // based on bootstrap docs code to activate all tooltips based on attrs
     [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            placement: "top",
+            customClass: "char-tooltip"
+        })
     });
 }
 
 // initially activate tooltips
 $(() => refreshtooltips());
-
-// html content of the undo button, not sure why its down here
-let undo_html = `
-<div class="col char bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Undo the last assignment" data-bs-custom-class="char-tooltip" id="undo">
-    <i class="fas fa-user-times"></i>
-</div>`;
