@@ -87,13 +87,13 @@ function export_final(data, callback) {
     // send status
     event.sender.send("export-progress", ["Preparing...", 0])
     // folder to dump results into
-    let outpath = "./out"
+    let outpath = "./datasets-0"
     // try out-1, out-2, out-3, etc. if out exists
-    if (fileExists("./out")) {
+    if (fileExists("./datasets-0")) {
         let index = 1;
         while (true) {
-            if (!fileExists(`./out-${index}`)) {
-                outpath = `./out-${index}`;
+            if (!fileExists(`./datasets-${index}`)) {
+                outpath = `./datasets-${index}`;
                 break;
             }
             index++;
