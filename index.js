@@ -117,7 +117,7 @@ function export_final(data, callback) {
         caps.forEach((cap, capindex) => {
             splitpromises.push(
                 child_process_promise.spawn("ffmpeg",
-                    ["-i", video_path, "-ss", cap.start / 1000, "-t", cap.end / 1000, "-f", "s16le",
+                    ["-i", video_path, "-ss", cap.start / 1000, "-t", (cap.end - cap.start) / 1000, "-c:a", "pcm_s16le",
                         `${outpath}/char-${charindex}/${capindex}.wav`]
                 )
             );
@@ -135,11 +135,10 @@ function export_final(data, callback) {
     Promise.allSettled(splitpromises).then(([result]) => {
         event.sender.send("export-progress", ["Complete!", 100]);
         open_file_explorer(path.resolve(outpath));
-
+        setTimeout(() => {
+            callback(null, true);
+        }, 1000);
     });
-    console.log(captions_sorted)
-
-    callback(null, "hello!");
 }
 
 function getSubtitleStream(filename, callback) {
