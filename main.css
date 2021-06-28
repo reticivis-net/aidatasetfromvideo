@@ -40,7 +40,7 @@
 
 @keyframes red-fade {
     0% {
-        color: var(--red);
+        color: var(--bs-red);
     }
     100% {
         color: white;

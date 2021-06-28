@@ -7,7 +7,15 @@ let char_data = [];
 
 
 function export_data(captions) {
-    window.electron.ipcinvoke("export-data", [captions, char_data]).then(r => console.log)
+    document.querySelector("#allcont").classList.add("d-none");
+    document.querySelector("#progresscont").classList.remove("d-none");
+    window.electron.ipcinvoke("export-data", [captions, char_data]).then(console.log)
+    window.electron.ipcon("export-progress", (event, arg) => {
+        let [text, progress] = arg;
+        document.querySelector("#progresstext").innerHTML = text;
+        document.querySelector("#progressbar").style.width = `${progress}%`;
+    });
+
 }
 
 // extracting subtitles requires FFMPEG, must be performed by main thread
@@ -29,7 +37,7 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
             let total_data = 0;
             all_assignments.forEach(assignment => total_data += (assignment.data.end - assignment.data.start) / 1000);
             // return tooltip title based on data
-            return `<p>Assign to '${char_data[index].name}'.</p><div class="char-data text-muted"><p>${all_assignments.length} lines</p><p>${total_data.toFixed(2)}s of data</p></div>`;
+            return `<p>Assign to '${char_data[index]}'.</p><div class="char-data text-muted"><p>${all_assignments.length} lines</p><p>${total_data.toFixed(2)}s of data</p></div>`;
         }
 
         // no need to display video before subtitles are loaded and the url has to be grabbed in JS anyways so its added now
@@ -171,10 +179,7 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
                         html: true
                     })
                     // add its name to char_data
-                    char_data.push({
-                        name: name,
-                        index: char_data.length,
-                    })
+                    char_data.push(name);
                     // increment sub and continue
                     nextsub();
                     video.play();

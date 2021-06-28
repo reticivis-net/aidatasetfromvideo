@@ -46,6 +46,7 @@ app.on('window-all-closed', function () {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 const child_process = require("child_process");
+const child_process_promise = require("child-process-promise")
 const util = require('util');
 const subtitle = require("subtitle");
 
@@ -65,12 +66,47 @@ ipcMain.handle('export-data', async (event, args) => {
     const prom = util.promisify(export_final);
     return await prom([event, args]);
 })
+const fs = require("fs")
+
+function fileExists(path) {
+    // yes this syntax is stupid but i didnt make it
+    try {
+        fs.accessSync(path, fs.constants.F_OK);
+        return true
+    } catch (err) {
+        return false
+    }
+}
 
 function export_final(data, callback) {
-    // ipcMain.
+    // unpack arguments
     let [event, args] = data;
-    console.log(event, args);
-    callback(null, "hello!")
+    let [captions, char_names] = args;
+    // send status
+    event.sender.send("export-progress", ["Preparing...", 0])
+    // folder to dump results into
+    let outpath = "./out"
+    // try out-1, out-2, out-3, etc. if out exists
+    if (fileExists("./out")) {
+        let index = 1;
+        while (true) {
+            if (!fileExists(`./out-${index}`)) {
+                outpath = `./out-${index}`;
+                break;
+            }
+            index++;
+        }
+    }
+    // create the new folder
+    fs.mkdirSync(outpath);
+    // sort captions by who theyre assigned to
+    let captions_sorted = [];
+    for (const x of Array(char_names.length).keys()) {
+        captions_sorted.push(captions.filter(item => item.assigned_to === x).map(cap => cap.data));
+    }
+    console.log(captions_sorted)
+
+    callback(null, "hello!");
 }
 
 function getSubtitleStream(filename, callback) {
