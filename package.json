@@ -46,7 +46,7 @@
           "name": "@electron-forge/maker-squirrel",
           "config": {
             "loadingGif": "loading.gif",
-            "iconUrl": "./icon.ico"
+            "iconUrl": "https://raw.githubusercontent.com/HexCodeFFF/captionthing/master/icon.ico"
           }
         }
       ],
