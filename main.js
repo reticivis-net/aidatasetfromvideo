@@ -1,5 +1,6 @@
 let dropArea;
 let root = document.documentElement;
+// register event listeners related to drag-and-drop file uploading
 document.addEventListener("DOMContentLoaded", function (event) {
     dropArea = document.getElementById('dropzone');
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -16,46 +17,56 @@ document.addEventListener("DOMContentLoaded", function (event) {
 });
 
 function handleSelect(e) {
+    // redirect file uploads (not drag-n-drop) to the file function
     handleFileUpload(e.target.files);
 }
 
 function handleDrop(e) {
+    // redirect file drops to the file function
     handleFileUpload(e.dataTransfer.files);
 }
 
 // const {ipcRenderer} = require('electron');
 
 function handleFileUpload(filelist) {
-    if (filelist.length > 1) {
+    // perform basic validation on the file upload
+    if (filelist.length > 1) { // only possible with drag and drop
         document.querySelector("#error-message").innerHTML = "Too many files!";
         errorshake();
         return
     }
-    if (filelist.length < 1) {
+    if (filelist.length < 1) { // i think hitting cancel on the file choose dialog can do this?
         document.querySelector("#error-message").innerHTML = "Too few files!";
         errorshake();
         return
     }
+    // filelist.length == 1
     let file = filelist[0];
-    if (!file.type.includes("video")) {
+    if (!file.type.includes("video")) { // MIME type checking
         document.querySelector("#error-message").innerHTML = "File must be video!";
         errorshake();
         return
     }
-    console.log(filelist);
+    // set some animations, next validation is done on the main process and can take a couple seconds
     document.querySelector("#upload-icon").innerHTML = "<i class=\"fad fa-spinner-third fa-9x fa-spin\"></i>";
     document.querySelector("#choose-text").innerHTML = "Checking video...";
     document.querySelector("#error-message").innerHTML = "";
     document.querySelector("#dropzone").style.animationDuration = "0.1s";
-    // window.location = `app.html?file=${encodeURIComponent(file.path)}`;
-    // window.checkIfVideoHasRequiredStreams(file.path);
-    if (window.electron) { // theres a reason im using electron.......,,,
-        window.electron.checkvideostreams(file.path).then((reply) => {
-            const types = reply.streams.map(x => x.codec_type);
+    // API exposed by preload.js for communicating with the main process. cases where it isnt declared could be in a
+    // browser if someone tries to run the source that way or if some error occured.
+    if (window.electron) {
+        // calls getvideodata() from index.js
+        window.electron.ipcinvoke("check-video-streams", file.path).then((reply) => {
+            // this just returns the whole json containing video data
+            // originally i was gonna display the error depending on which streams the file was missing but im lazy lol
             // video must have video, audio, and subtitles
-            console.log(reply);
+
+            // get list of all codec types in the file
+            const types = reply.streams.map(x => x.codec_type);
+            // check if it has v, a, and s
             let success = ['video', 'audio', 'subtitle'].every(i => types.includes(i));
             if (success) {
+                // file is fully validated, send it off to app
                 window.location = `app.html?file=${encodeURIComponent(file.path)}`;
             } else {
                 document.querySelector("#error-message").innerHTML = "File needs to have video, audio, and subtitles.";
@@ -70,9 +81,11 @@ function handleFileUpload(filelist) {
 }
 
 function errorshake() {
+    // reset changes made by handleFileUpload()
     document.querySelector("#upload-icon").innerHTML = "<i class=\"fas fa-upload fa-9x\"></i>";
     document.querySelector("#choose-text").innerHTML = "Choose a file.";
     document.querySelector("#dropzone").style.animationDuration = null;
+    // play animation
     let cl = document.querySelector("#shake-holder");
     cl.classList.add("error-shake");
     // restart animation
@@ -86,6 +99,7 @@ function preventDefaults(e) {
     e.stopPropagation()
 }
 
+// highlight class if file is hovering over the window, actual effects of this are css only
 function highlight(e) {
     dropArea.classList.add('highlight')
 }

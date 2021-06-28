@@ -15,19 +15,24 @@
     <link href="main.css" rel="stylesheet">
 </head>
 <body>
-<div id="videocont"></div>
-<div id="captioncont">
-    <p><i class="fad fa-spinner-third fa-spin"></i> Loading...</p>
-</div>
-<div id="charcont" class="container-fluid">
-    <div class="row">
-        <div class="col char bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Do not assign this sentence to anyone." data-bs-custom-class="char-tooltip" id="do-not-assign">
-            <i class="fas fa-user-slash"></i>
-        </div>
-        <div class="col char bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Assign to a new character." data-bs-custom-class="char-tooltip" id="new-char">
-            <i class="fas fa-user-plus"></i>
+<div id="allcont">
+    <div id="videocont"></div>
+    <div id="captioncont">
+        <p><i class="fad fa-spinner-third fa-spin"></i> Loading...</p>
+    </div>
+    <div class="container-fluid" id="charcont">
+        <div class="row">
+            <div class="col char bg-danger" data-bs-custom-class="char-tooltip" data-bs-placement="top"
+                 data-bs-toggle="tooltip" id="do-not-assign" title="Do not assign this sentence to anyone.">
+                <i class="fas fa-user-slash"></i>
+            </div>
+            <div class="col char bg-success" data-bs-custom-class="char-tooltip" data-bs-placement="top"
+                 data-bs-toggle="tooltip" id="new-char" title="Assign to a new character.">
+                <i class="fas fa-user-plus"></i>
+            </div>
         </div>
     </div>
 </div>
+
 </body>
 </html>

@@ -7,11 +7,12 @@ const {
     ipcRenderer
 } = require("electron");
 const fs = require("fs");
+// expose communication functions to "renderer" under the name window.electron
 contextBridge.exposeInMainWorld("electron", {
-    checkvideostreams: (filepath) => {
-        return ipcRenderer.invoke('check-video-streams', filepath)
+    ipcinvoke: (channel, args) => {
+        return ipcRenderer.invoke(channel, args)
     },
-    ripsub: (filepath) => {
-        return ipcRenderer.invoke('ripsub', filepath)
-    },
+    ipcon: (channel, listener) => {
+        return ipcRenderer.on(channel, listener)
+    }
 })

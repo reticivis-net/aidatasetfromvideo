@@ -137,12 +137,23 @@ body, html {
 .char:hover {
     filter: brightness(75%);
 }
+
 .char:nth-child(odd) {
     background: var(--bs-indigo);
 }
+
 .char:nth-child(even) {
     background: var(--bs-purple);
 }
+
 .char-tooltip {
+    font-size: 24px;
+}
+
+.char-data {
     font-size: 16px;
+}
+
+.tooltip-inner p {
+    margin-bottom: 0;
 }
