@@ -1,4 +1,5 @@
 node_modules
 out
+out-*
 .idea
 test.mkv

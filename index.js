@@ -78,10 +78,12 @@ function fileExists(path) {
     }
 }
 
+const open_file_explorer = require('open-file-explorer');
+
 function export_final(data, callback) {
     // unpack arguments
     let [event, args] = data;
-    let [captions, char_names] = args;
+    let [captions, char_names, video_path] = args;
     // send status
     event.sender.send("export-progress", ["Preparing...", 0])
     // folder to dump results into
@@ -99,11 +101,42 @@ function export_final(data, callback) {
     }
     // create the new folder
     fs.mkdirSync(outpath);
-    // sort captions by who theyre assigned to
+    // sort captions by who theyre assigned to and make the "data" the whole object
     let captions_sorted = [];
+    // for every character
     for (const x of Array(char_names.length).keys()) {
+        // push a list of all subs that belong to that character
         captions_sorted.push(captions.filter(item => item.assigned_to === x).map(cap => cap.data));
+        // and make a subdir of outdir for the char while we're at it
+        fs.mkdirSync(path.join(outpath, `char-${x}`));
     }
+    event.sender.send("export-progress", ["Creating dataset...", 0]);
+    let splitpromises = []; // a list of all promises of ffmpeg split events so i can wait for them all to finish
+    captions_sorted.forEach((caps, charindex) => {
+        let listtxt = "";
+        caps.forEach((cap, capindex) => {
+            splitpromises.push(
+                child_process_promise.spawn("ffmpeg",
+                    ["-i", video_path, "-ss", cap.start / 1000, "-t", cap.end / 1000, "-f", "s16le",
+                        `${outpath}/char-${charindex}/${capindex}.wav`]
+                )
+            );
+            listtxt += `${capindex}.wav|${cap.text.replace("\n", "")}\n`;
+        });
+        splitpromises.push(fs.promises.writeFile(`${outpath}/char-${charindex}/list.txt`, listtxt))
+    });
+    let completeproms = 0;
+    splitpromises.forEach(prom => {
+        prom.then(() => {
+            completeproms++;
+            event.sender.send("export-progress", ["Creating dataset...", (completeproms / splitpromises.length) * 100]);
+        });
+    });
+    Promise.allSettled(splitpromises).then(([result]) => {
+        event.sender.send("export-progress", ["Complete!", 100]);
+        open_file_explorer(path.resolve(outpath));
+
+    });
     console.log(captions_sorted)
 
     callback(null, "hello!");

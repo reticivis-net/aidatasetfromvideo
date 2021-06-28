@@ -9,11 +9,15 @@ let char_data = [];
 function export_data(captions) {
     document.querySelector("#allcont").classList.add("d-none");
     document.querySelector("#progresscont").classList.remove("d-none");
-    window.electron.ipcinvoke("export-data", [captions, char_data]).then(console.log)
+    window.electron.ipcinvoke("export-data", [captions, char_data, videourl]).then(console.log)
     window.electron.ipcon("export-progress", (event, arg) => {
         let [text, progress] = arg;
         document.querySelector("#progresstext").innerHTML = text;
         document.querySelector("#progressbar").style.width = `${progress}%`;
+        if (progress >= 100) {
+            let spinny = document.querySelector("#spinny");
+            spinny.parentElement.replaceChild(document.createRange().createContextualFragment("<i class=\"fad fa-check-circle\"></i>"), spinny);
+        }
     });
 
 }
