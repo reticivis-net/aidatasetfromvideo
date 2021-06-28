@@ -1,11 +1,11 @@
 {
-  "name": "captionthingv2",
+  "name": "aidatasetfromvideo",
   "version": "0.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/HexCodeFFF/captionthing.git"
   },
-  "description": "hi",
+  "description": "A utility to sort and slice a captioned video into a dataset for tacotron",
   "main": "index.js",
   "scripts": {
     "start": "electron-forge start",
@@ -27,33 +27,27 @@
     "child-process-promise": "^2.2.1",
     "electron-builder": "^22.11.7",
     "electron-squirrel-startup": "^1.0.0",
+    "npm": "^7.19.0",
     "open-file-explorer": "^1.0.2",
     "subtitle": "^4.1.0",
     "update-electron-app": "^2.0.1"
   },
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "icon": "icon.ico",
+        "ignore": [
+          ".github",
+          ".idea"
+        ]
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "captionthingv2"
+            "loadingGif": "loading.gif",
+            "iconUrl": "./icon.ico"
           }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
         }
       ],
       "publishers": [

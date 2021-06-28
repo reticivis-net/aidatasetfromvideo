@@ -5,6 +5,8 @@ require('update-electron-app')()
 
 // Modules to control application life and create native browser window
 const {app, BrowserWindow, ipcMain} = require('electron')
+// https://www.electronforge.io/config/makers/squirrel.windows#my-app-is-launching-multiple-times-during-install
+if (require('electron-squirrel-startup')) return app.quit();
 const path = require('path')
 
 function createWindow() {
@@ -13,7 +15,8 @@ function createWindow() {
         webPreferences: {
             enableRemoteModule: true,
             preload: path.join(__dirname, 'preload.js')
-        }
+        },
+        icon: "icon.ico"
     })
 
     // and load the index.html of the app.
