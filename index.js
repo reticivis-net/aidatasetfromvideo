@@ -1,12 +1,15 @@
 // index.js
 
-// update.electronjs.org
-require('update-electron-app')()
-
 // Modules to control application life and create native browser window
 const {app, BrowserWindow, ipcMain} = require('electron')
+
 // https://www.electronforge.io/config/makers/squirrel.windows#my-app-is-launching-multiple-times-during-install
 if (require('electron-squirrel-startup')) return app.quit();
+
+// update.electronjs.org
+require('update-electron-app')();
+
+
 const path = require('path')
 
 function createWindow() {

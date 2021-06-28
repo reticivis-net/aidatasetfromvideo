@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/HexCodeFFF/captionthing.git"
+    "url": "https://github.com/HexCodeFFF/aidatasetfromvideo.git"
   },
   "description": "A utility to sort and slice a captioned video into a dataset for tacotron",
   "main": "index.js",
@@ -24,8 +24,6 @@
     "child-process-promise": "^2.2.1",
     "electron-builder": "^22.11.7",
     "electron-squirrel-startup": "^1.0.0",
-    "github-url-to-object": "^4.0.6",
-    "npm": "^7.19.0",
     "open-file-explorer": "^1.0.2",
     "subtitle": "^4.1.0",
     "update-electron-app": "^2.0.1"
@@ -45,7 +43,7 @@
           "config": {
             "loadingGif": "loading.gif",
             "setupIcon": "icon.ico",
-            "iconUrl": "https://github.com/HexCodeFFF/captionthing/blob/master/icon.ico?raw=true"
+            "iconUrl": "https://github.com/HexCodeFFF/aidatasetfromvideo/blob/master/icon.ico?raw=true"
           }
         }
       ],
