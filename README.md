@@ -5,7 +5,7 @@ A utility to sort and slice a captioned video into a dataset for [tacotron](http
 [![GitHub all releases](https://img.shields.io/github/downloads/hexcodefff/aidatasetfromvideo/total)](https://github.com/HexCodeFFF/aidatasetfromvideo/releases)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/hexcodefff/aidatasetfromvideo)
 ![Total Lines](https://img.shields.io/tokei/lines/github/HexCodeFFF/aidatasetfromvideo)
-[![stars](https://img.shields.io/github/stars/HexCodeFFF/aidatasetfromvideo?style=social)](https://github.com/HexCodeFFF/captionbot/aidatasetfromvideo)
+[![stars](https://img.shields.io/github/stars/HexCodeFFF/aidatasetfromvideo?style=social)](https://github.com/HexCodeFFF/aidatasetfromvideo/stargazers)
 ![built with immense swag](https://img.shields.io/static/v1?label=built+with&message=pain&color=e74c3c)
 
 ## premise
