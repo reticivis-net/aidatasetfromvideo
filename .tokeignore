@@ -3,3 +3,4 @@ fonts
 node_modules
 .github
 out
+package-lock.json
