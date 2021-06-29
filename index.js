@@ -118,19 +118,25 @@ function export_final(data, callback) {
     }
     event.sender.send("export-progress", ["Creating dataset...", 0]);
     let splitpromises = []; // a list of all promises of ffmpeg split events so i can wait for them all to finish
+    // for every character
     captions_sorted.forEach((caps, charindex) => {
         let listtxt = "";
+        // for every line of that character
         caps.forEach((cap, capindex) => {
+            // split the source video according to the line's beginning and end, add the promise to the list to wait on
             splitpromises.push(
                 child_process_promise.spawn("ffmpeg",
                     ["-i", video_path, "-ss", cap.start / 1000, "-t", (cap.end - cap.start) / 1000, "-c:a", "pcm_s16le",
                         `${outpath}/char-${charindex}/${capindex}.wav`]
                 )
             );
+            // add the filename and text to the "list.txt" (transcript) file
             listtxt += `${capindex}.wav|${cap.text.replace("\n", "")}\n`;
         });
+        // write the transcripts to a file, add the promise to the list
         splitpromises.push(fs.promises.writeFile(`${outpath}/char-${charindex}/list.txt`, listtxt))
     });
+    // when a promise completes, tell the renderer.
     let completeproms = 0;
     splitpromises.forEach(prom => {
         prom.then(() => {
@@ -138,9 +144,12 @@ function export_final(data, callback) {
             event.sender.send("export-progress", ["Creating dataset...", (completeproms / splitpromises.length) * 100]);
         });
     });
+    // when all promises are complete
     Promise.allSettled(splitpromises).then(([result]) => {
         event.sender.send("export-progress", ["Complete!", 100]);
+        // open the folder where we wrote everything
         open_file_explorer(path.resolve(outpath));
+        // redirect back to the file upload screen which should™️ reset the state of the program and leave it ready for more!
         setTimeout(() => {
             callback(null, true);
         }, 1000);
