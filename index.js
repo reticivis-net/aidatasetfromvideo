@@ -65,7 +65,7 @@ ipcMain.handle('check-video-streams', async (event, args) => {
 ipcMain.handle('ripsub', async (event, args) => {
     // this event rips and parses the subtitles from a video file
     const prom = util.promisify(ripsub);
-    return await prom(args);
+    return await prom(args, event);
 })
 ipcMain.handle('export-data', async (event, args) => {
     // this event rips and parses the subtitles from a video file
@@ -156,21 +156,59 @@ function export_final(data, callback) {
     });
 }
 
-function getSubtitleStream(filename, callback) {
-    // send raw srt subtitles to callback()
-    child_process.exec(`ffmpeg -i ${filename} -map 0:s:0 -f srt -loglevel error pipe:1`,
-        (error, stdout, stderr) => {
-            callback(stdout)
-        });
+function streamToString(stream) {
+    const chunks = [];
+    return new Promise((resolve, reject) => {
+        stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+        stream.on('error', (err) => reject(err));
+        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    })
 }
 
-function ripsub(filepath, callback) {
+
+function getSubtitleStream(filename, event, callback) {
+    // send raw srt subtitles to callback()
+    /*child_process.exec(`ffmpeg -i "${filename}" -map 0:s:0 -f srt -loglevel error pipe:1`,
+        (error, stdout, stderr) => {
+            console.log(error);
+            callback(stdout)
+        });*/
+    // spawn process to rip srt subtitles from video
+    const proc = child_process.spawn("ffmpeg", ["-i", filename, "-map", "0:s:0", "-f", "srt", "-loglevel", "error", "pipe:1", "-progress", "pipe:2", "-nostats"])
+    // concat stdout (where subtitles are sent) and send to callback
+    streamToString(proc.stdout).then(callback);
+    // get video duration
+    const vlengthproc = child_process.spawn("ffprobe", ["-show_entries", "format=duration", "-print_format", "json", "-loglevel", "panic", filename])
+    streamToString(vlengthproc.stdout).then(r => {
+        // parse raw output from ffprobe into number (vider duration)
+        const vlength = Number(JSON.parse(r).format.duration);
+        // progress is sent to stderr, call function when getting progress report
+        proc.stderr.on('data', (data) => {
+            // progress has many entries with each line being `key=value`, turn this into a dict
+            let prog = {};
+            data.toString('utf8').split("\n").forEach(line => {
+                const lsplit = line.split("=");
+                prog[lsplit[0]] = lsplit[1];
+            });
+            // get current time in parsing in seconds
+            const out_time = Number(prog["out_time_us"]) * (0.000001);
+            // each time it gets an update from stderr
+            const percentdone = (out_time / vlength) * 100;
+            // send progress back to renderer
+            event.sender.send("ripsub-progress", percentdone);
+        });
+    })
+
+
+}
+
+function ripsub(filepath, event, callback) {
     // regex patterns to clean subtitles
     const tagpattern = /<[^>]*?>/g; // removes html tags
     const bracketpattern = /\[[^[]*]/g; // removes bracket patterns, i.e. "[screams]"
     const dashpattern = /^[-‐]/mg; // removes dashes from beginning of lines because thats a thing?
     const newlinepattern = /[\n\r]+/g; // removes newlines
-    getSubtitleStream(filepath, rawsubdata => { // get raw srt subtitles from ffmpeg
+    getSubtitleStream(filepath, event, rawsubdata => { // get raw srt subtitles from ffmpeg
         let subs = subtitle.parseSync(rawsubdata); // parse them using subtitle lib
         // yes its a sync function but this lib only has sync functions and pipe which i DO NOT UNDERSTAND, i tried
         subs = subs.map(sub => { // apply regex cleaning to subtitles

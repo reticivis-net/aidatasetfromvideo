@@ -96,3 +96,4 @@ This format should be compatible with [tacotron](https://github.com/keithito/tac
 - reduce file size
     - maybe use pnpm or webpack?
 - support linux?
+- detect ffmpeg installation or not require it

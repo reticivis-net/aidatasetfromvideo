@@ -18,6 +18,7 @@ function export_data(captions) {
         let [text, progress] = arg;
         document.querySelector("#progresstext").innerHTML = text;
         document.querySelector("#progressbar").style.width = `${progress}%`;
+        document.querySelector("#progressbar").innerHTML = `${Math.round(progress)}%`;
         if (progress >= 100) {
             let spinny = document.querySelector("#spinny");
             if (spinny) {
@@ -29,6 +30,12 @@ function export_data(captions) {
 
 }
 
+// recieves progress from getSubtitleStream() in index.js
+window.electron.ipcon("ripsub-progress", (event, arg) => {
+    // update progress bar with recieved data
+    document.querySelector("#ripprogress").style.width = `${arg}%`;
+    document.querySelector("#ripprogress").innerHTML = `${Math.round(arg)}%`;
+});
 // extracting subtitles requires FFMPEG, must be performed by main thread
 // see ripsub() in index.js
 window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
