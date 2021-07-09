@@ -1,7 +1,24 @@
 let dropArea;
 let root = document.documentElement;
+
 // register event listeners related to drag-and-drop file uploading
+
+function noffmpeg() {
+    bootbox.alert({
+        title: "<i class=\"fas fa-exclamation-triangle\"></i> Cannot locate FFmpeg!",
+        closeButton: false,
+        centerVertical: true,
+        message: "You're seeing this error message because ffmpeg and/or ffprobe could not be located. Make sure FFmpeg is installed and that both of these are in PATH (on Windows).",
+        callback: noffmpeg
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function (event) {
+    if (window.electron) {
+        window.electron.ipcinvoke("ffmpeg-exists").catch(() => {
+            noffmpeg();
+        });
+    }
     dropArea = document.getElementById('dropzone');
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false)

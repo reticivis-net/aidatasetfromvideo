@@ -67,10 +67,15 @@ ipcMain.handle('ripsub', async (event, args) => {
     const prom = util.promisify(ripsub);
     return await prom(args, event);
 })
+
 ipcMain.handle('export-data', async (event, args) => {
     // this event rips and parses the subtitles from a video file
     const prom = util.promisify(export_final);
     return await prom([event, args]);
+})
+const commandExists = require('command-exists');
+ipcMain.handle('ffmpeg-exists', async (event, args) => {
+    return await Promise.all([commandExists("ffmpeg"), commandExists("ffprobbe")]);
 })
 const fs = require("fs")
 

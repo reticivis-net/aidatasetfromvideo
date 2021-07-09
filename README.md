@@ -103,9 +103,8 @@ names of each character in a human-readable format, plus a link to the github.
 ## TODO
 
 - make it more clear that clicking the video replays the subtitle
-- allow upload of a video file and an SRT file separately
+- allow upload of a video file, and an SRT file separately
 - add support for more dataset formats for other AI voice models
 - reduce file size
   - maybe use pnpm or webpack?
 - support linux?
-- detect ffmpeg installation or not require it
