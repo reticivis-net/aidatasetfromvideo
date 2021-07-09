@@ -65,7 +65,7 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
         // current_sub_index++ except if we hit the end
         function nextsub() {
             if (current_sub_index + 1 >= subtitles.length) { // there are no more subtitles to assign, we are finished.
-                bootbox.alert("Sorted entire video!")
+                // bootbox.alert("Sorted entire video!")
                 export_data(subtitles);
             } else {
                 current_sub_index++;
