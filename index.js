@@ -226,6 +226,7 @@ function ripsub(filepath, event, callback) {
                 .replace(bracketpattern, "")
                 .replace(dashpattern, "")
                 .replace(newlinepattern, " ")
+                .trim()
             return sub
         });
         subs = subs.filter(sub => { // remove empty subtitles
