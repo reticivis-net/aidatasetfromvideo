@@ -119,10 +119,10 @@ function export_final(data, callback) {
     event.sender.send("export-progress", ["Creating dataset...", 0]);
     let splitpromises = []; // a list of all promises of ffmpeg split events so i can wait for them all to finish
     // "meta.txt" file at root of out folder, contains osme info
-    let metatxt = "List of datasets generated:";
+    let metatxt = "";
     // for every character
     captions_sorted.forEach((caps, charindex) => {
-        metatxt += `char-${charindex}: "${char_names[charindex]}"\n`;
+        metatxt += `char-${charindex}|${char_names[charindex]}\n`;
         let listtxt = "";
         // for every line of that character
         caps.forEach((cap, capindex) => {
