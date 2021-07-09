@@ -75,7 +75,7 @@ ipcMain.handle('export-data', async (event, args) => {
 })
 const commandExists = require('command-exists');
 ipcMain.handle('ffmpeg-exists', async (event, args) => {
-    return await Promise.all([commandExists("ffmpeg"), commandExists("ffprobbe")]);
+    return await Promise.all([commandExists("ffmpeg"), commandExists("ffprobe")]);
 })
 const fs = require("fs")
 
