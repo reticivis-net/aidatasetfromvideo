@@ -29,7 +29,7 @@ with os.scandir(sys.argv[1]) as root_dir:  # set up input dir loop
                 print(f"no list.txt file found in {entry.name}, skipping.")
                 continue
             # read list.txt
-            with open(os.path.join(entry.path, "list.txt")) as listtxt:
+            with open(os.path.join(entry.path, "list.txt"), encoding="utf-8") as listtxt:
                 listtxt = listtxt.readlines()
             # for every entry in list.txt
             for i, line in enumerate(listtxt):
@@ -55,7 +55,7 @@ for i, (file, transcription) in enumerate(outputfiles):
     listtxt.append(f"{i}.wav|{transcription.strip()}")
 print("writing list.txt...")
 listtxt = "\n".join(listtxt)
-with open(os.path.join(sys.argv[2], "list.txt"), "w+") as f:
+with open(os.path.join(sys.argv[2], "list.txt"), "w+", encoding="utf-8") as f:
     f.write(listtxt)
 print("done creating dataset. you can quit the program if you don't care about the total size of the dataset.")
 print("calculating size of dataset...")
