@@ -60,6 +60,8 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
         // no need to display video before subtitles are loaded and the url has to be grabbed in JS anyways so its added now
         document.querySelector("#videocont").innerHTML = `<video id="video" src="${videourl}" autoplay>`;
         let video = document.querySelector("#video");
+        // reveal buttons
+        document.querySelector("#charcont").classList.remove("d-none")
 
         // current_sub_index++ except if we hit the end
         function nextsub() {
@@ -91,6 +93,7 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
                 callback: result => {
                     // result is just true or false
                     if (result) {
+                        video.pause();
                         export_data(subtitles);
                     }
                 }
