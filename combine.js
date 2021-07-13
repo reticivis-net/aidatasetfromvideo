@@ -133,7 +133,7 @@ function handleFolderUpload(folder) {
         const name = folder.split(/[\/\\]/).pop();
         let node = document.createElement("div");
         node.classList.add("folder")
-        node.innerHTML = `<h3><i class="fas fa-folder"></i> ${name} <span class="text-danger folderdelete" onclick="deletefolder(this)"><i class="fas fa-times"></i></span></h3>
+        node.innerHTML = `<h3><i class="fas fa-folder"></i> ${name} <span class="text-danger folderdelete d-none" onclick="deletefolder(this)"><i class="fas fa-times"></i></span></h3>
                           <h4 class="indent"><span class="folder-data"><i class="fad fa-spinner-third fa-spin"></i> Processing...</span></h4>`;
         const elem = document.querySelector("#folderdisplay").appendChild(node);
         window.electron.ipcinvoke('analyze-dataset', folder).then(([secondsofdata, linesofdata]) => {
@@ -143,8 +143,10 @@ function handleFolderUpload(folder) {
             selectedfolders[i].secondsofdata = secondsofdata;
             selectedfolders[i].linesofdata = linesofdata;
             refreshcreatebutton();
+            elem.querySelector(".folderdelete").classList.remove("d-none");
         }).catch(reason => {
             elem.querySelector(".folder-data").innerHTML = `<span class="text-danger">${reason}</span>`;
+            elem.querySelector(".folderdelete").classList.remove("d-none");
         })
     }
 }
