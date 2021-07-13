@@ -24,7 +24,6 @@ function export_data(captions) {
             if (spinny) {
                 spinny.parentElement.replaceChild(document.createRange().createContextualFragment("<i class=\"fad fa-check-circle\"></i>"), spinny);
             }
-
         }
     });
 

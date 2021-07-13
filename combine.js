@@ -84,18 +84,23 @@ let selectedfolders = [];
 
 // gets passed folders from the user, needs further validation
 function handleFolderUpload(folder) {
-    if (selectedfolders.includes(folder)) {
+    if (selectedfolders.map(x => x.path).includes(folder)) {
         errorshake("Already added folder!");
     } else {
-        selectedfolders.push(folder);
+        selectedfolders.push({path: folder, verified: false});
         const name = folder.split(/[\/\\]/).pop();
         let node = document.createElement("div");
         node.classList.add("folder")
         node.innerHTML = `<h3><i class="fas fa-folder"></i> ${name} <span class="text-danger folderdelete" onclick="deletefolder(this)"><i class="fas fa-times"></i></span></h3>
-                          <h4><i class="fas fa-folder-tree"></i> Processing...</h4>`;
+                          <h4 class="indent"><span class="folder-data"><i class="fad fa-spinner-third fa-spin"></i> Processing...</span></h4>`;
         const elem = document.querySelector("#folderdisplay").appendChild(node);
+        window.electron.ipcinvoke('analyze-dataset', folder).then(([secondsofdata, linesofdata]) => {
+            elem.querySelector(".folder-data").innerHTML = `<i class="fas fa-hourglass"></i> ${secondsofdata.toFixed(2)} seconds, <i class="fas fa-align-left"></i> ${linesofdata} lines`;
+            selectedfolders[selectedfolders.map(x => x.path).indexOf(folder)].verified = true;
+        }).catch(reason => {
+            elem.querySelector(".folder-data").innerHTML = `<span class="text-danger">${reason}</span>`;
+        })
     }
-
 }
 
 function deletefolder(e) {
@@ -105,6 +110,8 @@ function deletefolder(e) {
     const index = [...element.parentNode.children].indexOf(element);
     // remove it from folders list
     selectedfolders.splice(index, 1);
+    // delete the element
+    element.remove();
 }
 
 function errorshake(message) {

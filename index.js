@@ -12,13 +12,15 @@ require('update-electron-app')();
 
 const path = require('path')
 let mainWindow;
+
 function createWindow() {
     // Create the browser window.
     mainWindow = new BrowserWindow({
         webPreferences: {
             enableRemoteModule: true,
-            preload: path.join(__dirname, 'preload.js')
-
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true
         },
         icon: "icon.ico"
     })
@@ -69,8 +71,7 @@ ipcMain.handle('ripsub', async (event, args) => {
 
 ipcMain.handle('export-data', async (event, args) => {
     // this event rips and parses the subtitles from a video file
-    const prom = util.promisify(export_final);
-    return await prom([event, args]);
+    return await export_final(event, args);
 });
 const commandExists = require('command-exists');
 ipcMain.handle('ffmpeg-exists', async (event, args) => {
@@ -83,10 +84,82 @@ ipcMain.handle('select-dirs', async (event, arg) => {
     });
 });
 ipcMain.handle('analyze-dataset', async (event, arg) => {
-    return await new Promise((resolve, reject) => {
-
-    })
+    return analyze_dataset(arg);
 });
+
+function execfilepromise(file, args) {
+    return new Promise(((resolve, reject) => {
+        child_process.execFile(file, args, (error, stdout, stderr) => {
+            if (error) reject(error);
+            resolve({stdout: stdout, stderr: stderr});
+        })
+    }))
+}
+
+function analyze_dataset(folderpath) {
+    return new Promise((resolve, reject) => {
+        // check if folder has list.txt
+        fileExistsProm(path.join(folderpath, "list.txt")).then(exists => {
+            if (exists) {
+                // read list.txt if it exists
+                fs.readFile(path.join(folderpath, "list.txt"), 'utf8', (err, data) => {
+                    // reject if error
+                    if (err) {
+                        reject(err);
+                    }
+                    let fileexistproms = []; // list of promises for creating the ffmpeg ones
+                    let proms = []; // list of ffmpeg promises
+                    // for every line in list.txt
+                    data.split("\n").map((line, i) => {
+
+                        // ignore if line doesnt have | char basically
+                        line = line.split("|", 2);
+                        if (line.length !== 2) {
+                            console.error(`malformed syntax on line ${i}`);
+                            return
+                        }
+
+                        fileexistproms.push(
+                            // if the supposed file in this entry exists
+                            fileExistsProm(path.join(folderpath, line[0])).then(wexists => {
+                                if (wexists) {
+                                    // create a promise to read the file duration
+                                    proms.push(execfilepromise('ffprobe', [path.join(folderpath, line[0]), "-v", "panic", "-show_entries",
+                                        "format=duration", "-of", "default=noprint_wrappers=1:nokey=1"]
+                                    ));
+                                } else {
+                                    // log and ignore if file isnt found
+                                    console.error(`couldn't find ${line[0]}`)
+                                }
+                            })
+                        )
+                    })
+                    // once all file exist promises are resolved
+                    // this waits for the previous loop to either create an ffmpeg promise or not based on if the file exists
+                    Promise.allSettled(fileexistproms).then(() => {
+                        // we know that all promises that will be added to proms are added, wait for proms to finish
+                        Promise.all(proms).then(result => {
+                            console.log(result)
+                            // reject if there's no valid entries
+                            if (result.length === 0) {
+                                reject("No valid entries in list.txt")
+                            } else {
+                                // parse stdout to a float, add all floats together
+                                const len = result.map(x => parseFloat(x.stdout)).reduce((a, b) => a + b, 0);
+                                // return seconds of data, lines of data
+                                resolve([len, result.length]);
+                            }
+                        });
+                    })
+                })
+            } else {
+                // reject if no list.txt found
+                reject("No list.txt found in folder.");
+            }
+        })
+    })
+}
+
 const fs = require("fs")
 
 function fileExists(path) {
@@ -99,86 +172,104 @@ function fileExists(path) {
     }
 }
 
+function fileExistsProm(path) {
+    return new Promise(((resolve, reject) => {
+        try {
+            fs.access(path, fs.constants.F_OK, err => {
+                resolve(!err);
+            })
+        } catch (err) {
+            reject(err);
+        }
+    }))
+}
+
 const open_file_explorer = require('open-file-explorer');
 
-function export_final(data, callback) {
-    // unpack arguments
-    let [event, args] = data;
-    let [captions, char_names, video_path] = args;
-    // send status
-    event.sender.send("export-progress", ["Preparing...", 0])
-    // folder to dump results into
-    let outpath = "./datasets-0"
-    // try out-1, out-2, out-3, etc. if out exists
-    if (fileExists("./datasets-0")) {
-        let index = 1;
-        while (true) {
-            if (!fileExists(`./datasets-${index}`)) {
-                outpath = `./datasets-${index}`;
-                break;
+function export_final(event, args) {
+    return new Promise((resolve, reject) => {
+        try {
+            // unpack arguments
+            let [captions, char_names, video_path] = args;
+            // send status
+            event.sender.send("export-progress", ["Preparing...", 0])
+            // folder to dump results into
+            let outpath = "./datasets-0"
+            // try out-1, out-2, out-3, etc. if out exists
+            if (fileExists("./datasets-0")) {
+                let index = 1;
+                while (true) {
+                    if (!fileExists(`./datasets-${index}`)) {
+                        outpath = `./datasets-${index}`;
+                        break;
+                    }
+                    index++;
+                }
             }
-            index++;
+            // create the new folder
+            fs.mkdirSync(outpath);
+            // sort captions by who theyre assigned to and make the "data" the whole object
+            let captions_sorted = [];
+            // for every character
+            for (const x of Array(char_names.length).keys()) {
+                // push a list of all subs that belong to that character
+                captions_sorted.push(captions.filter(item => item.assigned_to === x).map(cap => cap.data));
+                // and make a subdir of outdir for the char while we're at it
+                fs.mkdirSync(path.join(outpath, `char-${x}`));
+            }
+            event.sender.send("export-progress", ["Creating dataset...", 0]);
+            let splitpromises = []; // a list of all promises of ffmpeg split events so i can wait for them all to finish
+            // "meta.txt" file at root of out folder, contains osme info
+            let metatxt = `datasets generated from ${video_path.split(/[\\\/]/).pop()}:\n`;
+            // for every character
+            captions_sorted.forEach((caps, charindex) => {
+                let chardataseconds = 0; // seconds of data, will be calculated in coming loop
+                let chardatalines = caps.length;
+                let listtxt = "";
+                // for every line of that character
+                caps.forEach((cap, capindex) => {
+                    // split the source video according to the line's beginning and end, add the promise to the list to wait on
+                    splitpromises.push(
+                        child_process_promise.execFile("ffmpeg",
+                            ["-i", video_path, "-ss", cap.start / 1000, "-t", (cap.end - cap.start) / 1000, "-c:a", "pcm_s16le",
+                                `${outpath}/char-${charindex}/${capindex}.wav`]
+                        )
+                    );
+                    // add the filename and text to the "list.txt" (transcript) file
+                    listtxt += `${capindex}.wav|${cap.text.replace("\n", "")}\n`;
+                    // add data to meta
+                    chardataseconds += (cap.end - cap.start) / 1000;
+                });
+                // write the transcripts to a file, add the promise to the list
+                splitpromises.push(fs.promises.writeFile(`${outpath}/char-${charindex}/list.txt`, listtxt))
+                // add info to meta.txt
+                metatxt += `char-${charindex}: "${char_names[charindex]}" (${chardataseconds.toFixed(2)}s; ${chardatalines} line${chardatalines === 1 ? '' : 's'})\n`;
+            });
+            metatxt += "\nGenerated by aidatasetfromvideo https://github.com/HexCodeFFF/aidatasetfromvideo";
+            splitpromises.push(fs.promises.writeFile(`${outpath}/meta.txt`, metatxt));
+            // when a promise completes, tell the renderer.
+            let completeproms = 0;
+            splitpromises.forEach(prom => {
+                prom.then(() => {
+                    completeproms++;
+                    event.sender.send("export-progress", ["Creating dataset...", (completeproms / splitpromises.length) * 100]);
+                });
+            });
+            // when all promises are complete
+            Promise.allSettled(splitpromises).then(([result]) => {
+                event.sender.send("export-progress", ["Complete!", 100]);
+                // open the folder where we wrote everything
+                open_file_explorer(path.resolve(outpath));
+                // redirect back to the file upload screen which should™️ reset the state of the program and leave it ready for more!
+                setTimeout(() => {
+                    resolve(true);
+                }, 1000);
+            });
+        } catch (e) {
+            reject(e);
         }
-    }
-    // create the new folder
-    fs.mkdirSync(outpath);
-    // sort captions by who theyre assigned to and make the "data" the whole object
-    let captions_sorted = [];
-    // for every character
-    for (const x of Array(char_names.length).keys()) {
-        // push a list of all subs that belong to that character
-        captions_sorted.push(captions.filter(item => item.assigned_to === x).map(cap => cap.data));
-        // and make a subdir of outdir for the char while we're at it
-        fs.mkdirSync(path.join(outpath, `char-${x}`));
-    }
-    event.sender.send("export-progress", ["Creating dataset...", 0]);
-    let splitpromises = []; // a list of all promises of ffmpeg split events so i can wait for them all to finish
-    // "meta.txt" file at root of out folder, contains osme info
-    let metatxt = `datasets generated from ${video_path.split(/[\\\/]/).pop()}:\n`;
-    // for every character
-    captions_sorted.forEach((caps, charindex) => {
-        let chardataseconds = 0; // seconds of data, will be calculated in coming loop
-        let chardatalines = caps.length;
-        let listtxt = "";
-        // for every line of that character
-        caps.forEach((cap, capindex) => {
-            // split the source video according to the line's beginning and end, add the promise to the list to wait on
-            splitpromises.push(
-                child_process_promise.spawn("ffmpeg",
-                    ["-i", video_path, "-ss", cap.start / 1000, "-t", (cap.end - cap.start) / 1000, "-c:a", "pcm_s16le",
-                        `${outpath}/char-${charindex}/${capindex}.wav`]
-                )
-            );
-            // add the filename and text to the "list.txt" (transcript) file
-            listtxt += `${capindex}.wav|${cap.text.replace("\n", "")}\n`;
-            // add data to meta
-            chardataseconds += (cap.end - cap.start) / 1000;
-        });
-        // write the transcripts to a file, add the promise to the list
-        splitpromises.push(fs.promises.writeFile(`${outpath}/char-${charindex}/list.txt`, listtxt))
-        // add info to meta.txt
-        metatxt += `char-${charindex}: "${char_names[charindex]}" (${chardataseconds.toFixed(2)}s; ${chardatalines} line${chardatalines === 1 ? '' : 's'})\n`;
     });
-    metatxt += "\nGenerated by aidatasetfromvideo https://github.com/HexCodeFFF/aidatasetfromvideo";
-    splitpromises.push(fs.promises.writeFile(`${outpath}/meta.txt`, metatxt));
-    // when a promise completes, tell the renderer.
-    let completeproms = 0;
-    splitpromises.forEach(prom => {
-        prom.then(() => {
-            completeproms++;
-            event.sender.send("export-progress", ["Creating dataset...", (completeproms / splitpromises.length) * 100]);
-        });
-    });
-    // when all promises are complete
-    Promise.allSettled(splitpromises).then(([result]) => {
-        event.sender.send("export-progress", ["Complete!", 100]);
-        // open the folder where we wrote everything
-        open_file_explorer(path.resolve(outpath));
-        // redirect back to the file upload screen which should™️ reset the state of the program and leave it ready for more!
-        setTimeout(() => {
-            callback(null, true);
-        }, 1000);
-    });
+
 }
 
 function streamToString(stream) {
@@ -203,8 +294,8 @@ function getSubtitleStream(filename, event, callback) {
     // concat stdout (where subtitles are sent) and send to callback
     streamToString(proc.stdout).then(callback);
     // get video duration
-    const vlengthproc = child_process.spawn("ffprobe", ["-show_entries", "format=duration", "-print_format", "json", "-loglevel", "panic", filename])
-    streamToString(vlengthproc.stdout).then(r => {
+    const vlengthproc = child_process.execFile("ffprobe", ["-show_entries", "format=duration", "-print_format", "json", "-loglevel", "panic", filename])
+    vlengthproc.then(r => {
         // parse raw output from ffprobe into number (vider duration)
         const vlength = Number(JSON.parse(r).format.duration);
         // progress is sent to stderr, call function when getting progress report
@@ -255,9 +346,7 @@ function ripsub(filepath, event) {
         } catch (e) {
             reject(e);
         }
-
     });
-
 }
 
 function getvideodata(video) {

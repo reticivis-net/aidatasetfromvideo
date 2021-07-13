@@ -214,3 +214,7 @@ a:hover {
 .folder:hover .folderdelete {
     display: inline-block;
 }
+
+.indent {
+    margin-left: 1em;
+}
