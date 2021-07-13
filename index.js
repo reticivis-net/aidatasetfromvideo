@@ -87,13 +87,31 @@ ipcMain.handle('analyze-dataset', async (event, arg) => {
     return analyze_dataset(arg);
 });
 
-function execfilepromise(file, args) {
+function execfilepromisewithworker(worker, file, args) {
     return new Promise(((resolve, reject) => {
-        child_process.execFile(file, args, (error, stdout, stderr) => {
-            if (error) reject(error);
-            resolve({stdout: stdout, stderr: stderr});
-        })
+        worker.aspawn([file].concat(args),
+            function (err, stdout, stderr) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve({stdout: stdout, stderr: stderr});
+                }
+            });
     }))
+
+}
+
+let mod_spawnasync = require('spawn-async');
+// spawnasync expects this log object
+// its designed for the "bunyan" logger but id rather not
+function log() {
+    return {
+        debug: () => {
+        },
+        info: console.log,
+        warn: console.warn
+    }
+
 }
 
 function analyze_dataset(folderpath) {
@@ -109,6 +127,8 @@ function analyze_dataset(folderpath) {
                     }
                     let fileexistproms = []; // list of promises for creating the ffmpeg ones
                     let proms = []; // list of ffmpeg promises
+                    // let log = bunyan.createLogger({name: "worker"});
+                    let worker = mod_spawnasync.createWorker({"log": log()});
                     // for every line in list.txt
                     data.split("\n").map((line, i) => {
 
@@ -124,7 +144,7 @@ function analyze_dataset(folderpath) {
                             fileExistsProm(path.join(folderpath, line[0])).then(wexists => {
                                 if (wexists) {
                                     // create a promise to read the file duration
-                                    proms.push(execfilepromise('ffprobe', [path.join(folderpath, line[0]), "-v", "panic", "-show_entries",
+                                    proms.push(execfilepromisewithworker(worker, 'ffprobe', [path.join(folderpath, line[0]), "-v", "panic", "-show_entries",
                                         "format=duration", "-of", "default=noprint_wrappers=1:nokey=1"]
                                     ));
                                 } else {
@@ -139,6 +159,7 @@ function analyze_dataset(folderpath) {
                     Promise.allSettled(fileexistproms).then(() => {
                         // we know that all promises that will be added to proms are added, wait for proms to finish
                         Promise.all(proms).then(result => {
+                            worker.destroy();
                             console.log(result)
                             // reject if there's no valid entries
                             if (result.length === 0) {
@@ -222,6 +243,7 @@ function export_final(event, args) {
             // "meta.txt" file at root of out folder, contains osme info
             let metatxt = `datasets generated from ${video_path.split(/[\\\/]/).pop()}:\n`;
             // for every character
+            let worker = mod_spawnasync.createWorker({"log": log()});
             captions_sorted.forEach((caps, charindex) => {
                 let chardataseconds = 0; // seconds of data, will be calculated in coming loop
                 let chardatalines = caps.length;
@@ -230,8 +252,8 @@ function export_final(event, args) {
                 caps.forEach((cap, capindex) => {
                     // split the source video according to the line's beginning and end, add the promise to the list to wait on
                     splitpromises.push(
-                        child_process_promise.execFile("ffmpeg",
-                            ["-i", video_path, "-ss", cap.start / 1000, "-t", (cap.end - cap.start) / 1000, "-c:a", "pcm_s16le",
+                        execfilepromisewithworker(worker, "ffmpeg",
+                            ["-i", video_path, "-ss", (cap.start / 1000).toString(), "-t", ((cap.end - cap.start) / 1000).toString(), "-c:a", "pcm_s16le",
                                 `${outpath}/char-${charindex}/${capindex}.wav`]
                         )
                     );
@@ -262,6 +284,7 @@ function export_final(event, args) {
                 open_file_explorer(path.resolve(outpath));
                 // redirect back to the file upload screen which should™️ reset the state of the program and leave it ready for more!
                 setTimeout(() => {
+                    worker.destroy();
                     resolve(true);
                 }, 1000);
             });
@@ -294,9 +317,9 @@ function getSubtitleStream(filename, event, callback) {
     // concat stdout (where subtitles are sent) and send to callback
     streamToString(proc.stdout).then(callback);
     // get video duration
-    const vlengthproc = child_process.execFile("ffprobe", ["-show_entries", "format=duration", "-print_format", "json", "-loglevel", "panic", filename])
-    vlengthproc.then(r => {
-        // parse raw output from ffprobe into number (vider duration)
+    const vlengthproc = child_process.spawn("ffprobe", ["-show_entries", "format=duration", "-print_format", "json", "-loglevel", "panic", filename])
+    streamToString(vlengthproc.stdout).then(r => {
+        // parse raw output from ffprobe into number (video duration)
         const vlength = Number(JSON.parse(r).format.duration);
         // progress is sent to stderr, call function when getting progress report
         proc.stderr.on('data', (data) => {
