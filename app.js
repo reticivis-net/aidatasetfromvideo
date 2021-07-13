@@ -11,8 +11,7 @@ function export_data(captions) {
     document.querySelector("#progresscont").classList.remove("d-none");
     window.electron.ipcinvoke("export-data", [captions, char_data, videourl]).then((e) => {
         // export-data returns after explorer window is opened
-        console.log(e);
-        window.location = "filepicker.html";
+        window.location = "entry.html";
     })
     window.electron.ipcon("export-progress", (event, arg) => {
         let [text, progress] = arg;

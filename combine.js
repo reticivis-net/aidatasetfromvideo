@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     });
     dropArea.addEventListener('drop', handleDrop, false)
     document.querySelector('#folderupload').addEventListener("click", handleSelect);
+    document.querySelector('#combine').addEventListener("click", process);
 });
 
 function preventDefaults(e) {
@@ -80,6 +81,47 @@ function handleDrop(e) {
     }
 }
 
+function process() {
+    document.querySelector("#allcont").classList.add("d-none");
+    document.querySelector("#progresscont").classList.remove("d-none");
+    window.electron.ipcinvoke("combine-datasets", selectedfolders).then((e) => {
+        // returns after explorer window is opened
+        window.location = "entry.html";
+    })
+    window.electron.ipcon("combine-progress", (event, arg) => {
+        let [text, progress] = arg;
+        document.querySelector("#progresstext").innerHTML = text;
+        document.querySelector("#progressbar").style.width = `${progress}%`;
+        document.querySelector("#progressbar").innerHTML = `${Math.round(progress)}%`;
+        if (progress >= 100) {
+            let spinny = document.querySelector("#spinny");
+            if (spinny) {
+                spinny.parentElement.replaceChild(document.createRange().createContextualFragment("<i class=\"fad fa-check-circle\"></i>"), spinny);
+            }
+        }
+    });
+}
+
+function refreshcreatebutton() {
+    let button = document.querySelector("#combine");
+    let text = document.querySelector("#combine-text");
+    if (selectedfolders.filter(x => x.verified).length >= 2) {
+        button.classList.remove("disabled");
+        text.innerHTML = "";
+        let totalseconds = 0;
+        let totallines = 0;
+        selectedfolders.filter(x => x.hasOwnProperty('secondsofdata')).map(x => {
+            totalseconds += x.secondsofdata;
+            totallines += x.linesofdata;
+        })
+        document.querySelector("#combined").innerHTML = `<i class="fas fa-hourglass"></i> ${totalseconds.toFixed(2)} seconds <i class="fas fa-align-left"></i> ${totallines} lines`;
+    } else {
+        button.classList.add("disabled");
+        text.innerHTML = "Select at least 2 valid datasets to combine.";
+        document.querySelector("#combined").innerHTML = "";
+    }
+}
+
 let selectedfolders = [];
 
 // gets passed folders from the user, needs further validation
@@ -95,8 +137,12 @@ function handleFolderUpload(folder) {
                           <h4 class="indent"><span class="folder-data"><i class="fad fa-spinner-third fa-spin"></i> Processing...</span></h4>`;
         const elem = document.querySelector("#folderdisplay").appendChild(node);
         window.electron.ipcinvoke('analyze-dataset', folder).then(([secondsofdata, linesofdata]) => {
-            elem.querySelector(".folder-data").innerHTML = `<i class="fas fa-hourglass"></i> ${secondsofdata.toFixed(2)} seconds, <i class="fas fa-align-left"></i> ${linesofdata} lines`;
-            selectedfolders[selectedfolders.map(x => x.path).indexOf(folder)].verified = true;
+            elem.querySelector(".folder-data").innerHTML = `<i class="fas fa-hourglass"></i> ${secondsofdata.toFixed(2)} seconds <i class="fas fa-align-left"></i> ${linesofdata} lines`;
+            const i = selectedfolders.map(x => x.path).indexOf(folder);
+            selectedfolders[i].verified = true;
+            selectedfolders[i].secondsofdata = secondsofdata;
+            selectedfolders[i].linesofdata = linesofdata;
+            refreshcreatebutton();
         }).catch(reason => {
             elem.querySelector(".folder-data").innerHTML = `<span class="text-danger">${reason}</span>`;
         })
@@ -112,6 +158,7 @@ function deletefolder(e) {
     selectedfolders.splice(index, 1);
     // delete the element
     element.remove();
+    refreshcreatebutton();
 }
 
 function errorshake(message) {

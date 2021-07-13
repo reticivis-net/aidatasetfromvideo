@@ -72,6 +72,11 @@ ipcMain.handle('export-data', async (event, args) => {
     // this event rips and parses the subtitles from a video file
     return await export_final(event, args);
 });
+
+ipcMain.handle('combine-datasets', async (event, args) => {
+    // this event rips and parses the subtitles from a video file
+    return await combine_datasets(event, args);
+});
 const commandExists = require('command-exists');
 ipcMain.handle('ffmpeg-exists', async (event, args) => {
     return await Promise.all([commandExists("ffmpeg"), commandExists("ffprobe")]);
@@ -83,7 +88,7 @@ ipcMain.handle('select-dirs', async (event, arg) => {
     });
 });
 ipcMain.handle('analyze-dataset', async (event, arg) => {
-    return analyze_dataset(arg);
+    return await analyze_dataset(arg);
 });
 
 function execfilepromisewithworker(worker, file, args) {
@@ -129,7 +134,7 @@ function analyze_dataset(folderpath) {
                     // let log = bunyan.createLogger({name: "worker"});
                     let worker = mod_spawnasync.createWorker({"log": log()});
                     // for every line in list.txt
-                    data.split("\n").map((line, i) => {
+                    data.trim().split("\n").map((line, i) => {
 
                         // ignore if line doesnt have | char basically
                         line = line.split("|", 2);
@@ -159,7 +164,6 @@ function analyze_dataset(folderpath) {
                         // we know that all promises that will be added to proms are added, wait for proms to finish
                         Promise.all(proms).then(result => {
                             worker.destroy();
-                            console.log(result)
                             // reject if there's no valid entries
                             if (result.length === 0) {
                                 reject("No valid entries in list.txt")
@@ -202,6 +206,80 @@ function fileExistsProm(path) {
             reject(err);
         }
     }))
+}
+
+function combine_datasets(event, paths) {
+    return new Promise((resolve, reject) => {
+        try {
+            event.sender.send("combine-progress", ["Preparing...", 0]);
+            // folder to dump results into
+            let outpath = "./dataset-combined-0"
+            // try out-1, out-2, out-3, etc. if out exists
+            if (fileExists("./dataset-combined-0")) {
+                let index = 1;
+                while (true) {
+                    if (!fileExists(`./dataset-combined-${index}`)) {
+                        outpath = `./dataset-combined-${index}`;
+                        break;
+                    }
+                    index++;
+                }
+            }
+            // create the new folder
+            fs.mkdirSync(outpath);
+            let readfileproms = []
+            let lines = []
+            event.sender.send("combine-progress", ["Reading existing datasets...", 0]);
+            paths.map(x => x.path).forEach(fpath => {
+                readfileproms.push(
+                    fs.promises.readFile(path.join(fpath, "list.txt")).then(r => {
+                        r = r.toString('utf-8');
+                        r.trim().split("\n").forEach((line, i) => {
+
+                            // ignore if line doesnt have | char basically
+                            line = line.split("|", 2);
+                            if (line.length !== 2) {
+                                console.error(`malformed syntax on line ${i}`);
+                                return
+                            }
+                            lines.push({file: path.join(fpath, line[0]), transcript: line[1]})
+                        })
+                    })
+                )
+            });
+            let proms = [];
+            let listtxt = "";
+            Promise.allSettled(readfileproms).then(r => {
+                lines.forEach((line, i) => {
+                    proms.push(
+                        fs.promises.copyFile(line.file, path.join(outpath, `${i}.wav`))
+                    )
+                    listtxt += `${i}.wav|${line.transcript}\n`
+                })
+
+                proms.push(fs.promises.writeFile(path.join(outpath, "list.txt"), listtxt));
+                let completeproms = 0;
+                proms.forEach(prom => {
+                    prom.then(() => {
+                        completeproms++;
+                        event.sender.send("combine-progress", ["Copying files...", (completeproms / proms.length) * 100]);
+                    });
+                });
+                Promise.allSettled(proms).then(r => {
+                    event.sender.send("combine-progress", ["Complete!", 100]);
+                    // open the folder where we wrote everything
+                    open_file_explorer(path.resolve(outpath));
+                    // redirect back to the file upload screen which should™️ reset the state of the program and leave it ready for more!
+                    setTimeout(() => {
+                        resolve(true);
+                    }, 1000);
+                })
+            })
+
+        } catch (e) {
+            reject(e)
+        }
+    });
 }
 
 const open_file_explorer = require('open-file-explorer');
@@ -267,7 +345,7 @@ function export_final(event, args) {
                 metatxt += `char-${charindex}: "${char_names[charindex]}" (${chardataseconds.toFixed(2)}s; ${chardatalines} line${chardatalines === 1 ? '' : 's'})\n`;
             });
             metatxt += "\nGenerated by aidatasetfromvideo https://github.com/HexCodeFFF/aidatasetfromvideo";
-            splitpromises.push(fs.promises.writeFile(`${outpath}/meta.txt`, metatxt));
+            splitpromises.push(fs.promises.writeFile(path.join(outpath, "meta.txt"), metatxt));
             // when a promise completes, tell the renderer.
             let completeproms = 0;
             splitpromises.forEach(prom => {
