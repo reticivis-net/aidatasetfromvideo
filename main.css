@@ -7,6 +7,21 @@
     text-align: center;
 }
 
+.hvcenterrelative {
+    display: grid;
+    height: 100%;
+    text-align: center;
+    margin: 0;
+}
+
+.hvcenterrelative > * {
+    margin: auto;
+}
+
+.height100 {
+    height: 100%;
+}
+
 :root {
     --border-dance-color: #fff8;
 }
@@ -20,7 +35,7 @@
     transition: animation-duration 1s ease-in-out;
 }
 
-.highlight.borderdance {
+.highlight.borderdance:not(#dropborder) {
     animation-duration: 0.2s;
 }
 
@@ -84,6 +99,16 @@
     left: 10px;
     right: 10px;
     bottom: 10px;
+}
+
+.cover {
+    position: fixed; /* Sit on top of the page content */
+    /*width: 100%; !* Full width (cover the whole page) *!*/
+    /*height: 100%; !* Full height (cover the whole page) *!*/
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 input[type="file"] {
@@ -156,4 +181,36 @@ body, html, #allcont {
 
 .tooltip-inner p {
     margin-bottom: 0;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #aaa;
+}
+
+#dropborder.highlight {
+    opacity: 1;
+}
+
+#dropborder {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+}
+
+#folderupload {
+    cursor: pointer;
+}
+
+.folderdelete {
+    display: none;
+    cursor: pointer;
+}
+
+.folder:hover .folderdelete {
+    display: inline-block;
 }

@@ -13,11 +13,23 @@ function noffmpeg() {
     });
 }
 
+function noelectron() {
+    bootbox.alert({
+        title: "<i class=\"fas fa-exclamation-triangle\"></i> Cannot access electron!",
+        closeButton: false,
+        centerVertical: true,
+        message: "You're seeing this error message because the renderer process (me) is unable to communicate with Electron's main process. Ensure you're running me using electron, not in browser.",
+        callback: noelectron
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function (event) {
     if (window.electron) {
         window.electron.ipcinvoke("ffmpeg-exists").catch(() => {
             noffmpeg();
         });
+    } else {
+        noelectron();
     }
     dropArea = document.getElementById('dropzone');
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -32,6 +44,20 @@ document.addEventListener("DOMContentLoaded", function (event) {
     dropArea.addEventListener('drop', handleDrop, false)
     document.querySelector('#choosefile').addEventListener("change", handleSelect);
 });
+
+function preventDefaults(e) {
+    e.preventDefault()
+    e.stopPropagation()
+}
+
+// highlight class if file is hovering over the window, actual effects of this are css only
+function highlight(e) {
+    dropArea.classList.add('highlight')
+}
+
+function unhighlight(e) {
+    dropArea.classList.remove('highlight')
+}
 
 function handleSelect(e) {
     // redirect file uploads (not drag-n-drop) to the file function
@@ -97,6 +123,7 @@ function handleFileUpload(filelist) {
 
 }
 
+
 function errorshake() {
     // reset changes made by handleFileUpload()
     document.querySelector("#upload-icon").innerHTML = "<i class=\"fas fa-upload fa-9x\"></i>";
@@ -111,16 +138,4 @@ function errorshake() {
     cl.style.animation = null;
 }
 
-function preventDefaults(e) {
-    e.preventDefault()
-    e.stopPropagation()
-}
 
-// highlight class if file is hovering over the window, actual effects of this are css only
-function highlight(e) {
-    dropArea.classList.add('highlight')
-}
-
-function unhighlight(e) {
-    dropArea.classList.remove('highlight')
-}
