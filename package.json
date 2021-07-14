@@ -1,6 +1,6 @@
 {
   "name": "aidatasetfromvideo",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/HexCodeFFF/aidatasetfromvideo.git"
@@ -31,39 +31,5 @@
     "update-electron-app": "^2.0.1"
   },
   "config": {
-    "forge": {
-      "packagerConfig": {
-        "icon": "icon.ico",
-        "ignore": [
-          "\\.github",
-          "\\.idea",
-          "datasets-\\d+",
-          "out",
-          "screenshots"
-        ]
-      },
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "loadingGif": "loading.gif",
-            "setupIcon": "icon.ico",
-            "iconUrl": "https://github.com/HexCodeFFF/aidatasetfromvideo/blob/master/icon.ico?raw=true"
-          }
-        }
-      ],
-      "publishers": [
-        {
-          "name": "@electron-forge/publisher-github",
-          "config": {
-            "repository": {
-              "owner": "HexCodeFFF",
-              "name": "captionthing"
-            },
-            "prerelease": true
-          }
-        }
-      ]
-    }
   }
 }

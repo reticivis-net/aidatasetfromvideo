@@ -123,10 +123,10 @@ could be a problem if your data is spread across multiple videos (such as an epi
 this allows you to select (by drag-and-drop or upload) two or more datasets and combine them into a singular dataset.
 
 
-## TODO
+# TODO
 
 - make it more clear that clicking the video replays the subtitle
-- allow upload of a video file, and an SRT file separately
+- allow upload of a video file, and an SRT/caption file separately
 - add support for more dataset formats for other AI voice models
 - reduce file size
   - maybe use pnpm or webpack?
