@@ -157,11 +157,13 @@ body, html, #allcont {
 
 .char {
     padding: 10px;
-    cursor:pointer;
+    cursor: pointer;
 }
+
 .char:hover {
     filter: brightness(75%);
 }
+
 
 .char:nth-child(odd) {
     background: var(--bs-indigo);
@@ -217,4 +219,13 @@ a:hover {
 
 .indent {
     margin-left: 1em;
+}
+
+#edittext, #reverttext {
+    cursor: pointer;
+    font-size: 0.5em;
+}
+
+#edittext:hover, #reverttext:hover {
+    color: #aaa;
 }

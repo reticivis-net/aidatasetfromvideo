@@ -430,17 +430,19 @@ function ripsub(filepath, event) {
                 let subs = subtitle.parseSync(rawsubdata); // parse them using subtitle lib
                 // yes its a sync function but this lib only has sync functions and pipe which i DO NOT UNDERSTAND, i tried
                 subs = subs.map(sub => { // apply regex cleaning to subtitles
+                    sub.data.unfilteredtext = sub.data.text;
                     sub.data.text = sub.data.text.replace(tagpattern, "")
                         .replace(bracketpattern, "")
                         .replace(dashpattern, "")
                         .replace(newlinepattern, " ")
                         .trim()
+                    sub.data.origtext = sub.data.text;
                     return sub
                 });
                 subs = subs.filter(sub => { // remove empty subtitles
                     return sub.data.text.replace(/\s/, "") !== ""
                 })
-                // send subtitles back (callback format is 'cause promisify)
+                // send subtitles back
                 resolve(subs);
             });
         } catch (e) {

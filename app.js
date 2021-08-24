@@ -172,6 +172,7 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
                 title: "What is the name of this character?",
                 closeButton: false,
                 centerVertical: true,
+
                 callback: (name) => {
                     // blank name seems annoying/confusing
                     if (!name) {
@@ -224,8 +225,83 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
             // display sub based on current sub. video pausing is a bit slow so this is easier on the user
             let current_caption = subtitles[current_sub_index].data.text;
             // no practical purpose, it just makes me feel good (and looks better in inspect element)
-            if (captionholder.innerHTML !== current_caption) {
-                captionholder.innerHTML = current_caption;
+            if (!captionholder.querySelector("#cap") || // if it has no "cap" child
+                captionholder.querySelector("#cap").innerHTML !== current_caption) { // or if child content is wrong
+                // set with caption text plus edit and revert button
+                captionholder.innerHTML = `<span id="cap">${current_caption}</span> <span id="edittext"><i class="fas fa-edit"></i></span> <span id="reverttext"><i class="fas fa-undo"></i></span>`;
+                let edittext = document.querySelector("#edittext");
+                // add tooltip to edit button
+                new bootstrap.Tooltip(edittext, {
+                    placement: "top",
+                    title: "Edit text",
+                    html: true
+                })
+                let reverttext = document.querySelector("#reverttext");
+                // add tooltip to edit button
+                new bootstrap.Tooltip(reverttext, {
+                    placement: "top",
+                    title: "Revert text",
+                    html: true
+                })
+                // old edit button with tooltip was destroyed so this
+                refreshtooltips();
+                // add edit button action
+                edittext.onclick = () => {
+                    bootbox.prompt({
+                        centerVertical: true,
+                        closeButton: false, // css is fucky
+                        title: "Edit text",
+                        inputType: 'textarea',
+                        value: current_caption,
+                        buttons: {
+                            confirm: {
+                                label: 'Submit',
+                                className: 'btn-success'
+                            },
+                            cancel: {
+                                label: 'Cancel',
+                                className: 'btn-danger'
+                            }
+                        },
+                        callback: function (result) {
+                            if (result) {
+                                subtitles[current_sub_index].data.text = result;
+                                video.ontimeupdate();
+                            }
+                        }
+                    });
+                }
+                // add revert action
+                reverttext.onclick = () => {
+                    bootbox.dialog({
+                        centerVertical: true,
+                        closeButton: false,
+                        title: "Revert text",
+                        message: "Revert text to unedited, or unfiltered versions.",
+                        buttons: {
+                            cancel: {
+                                label: 'Cancel',
+                                className: 'btn-danger'
+                            },
+                            revert: {
+                                label: 'Revert to Original',
+                                className: 'btn-primary',
+                                callback: () => {
+                                    subtitles[current_sub_index].data.text = subtitles[current_sub_index].data.origtext;
+                                    video.ontimeupdate();
+                                }
+                            },
+                            unfilter: {
+                                label: 'Revert to Unfiltered',
+                                className: 'btn-warning',
+                                callback: () => {
+                                    subtitles[current_sub_index].data.text = subtitles[current_sub_index].data.unfilteredtext;
+                                    video.ontimeupdate();
+                                }
+                            }
+                        }
+                    });
+                }
             }
             // skip to beginning of the sub if current time is before
             if (subtitles[current_sub_index].data.start / 1000 > video.currentTime) {
