@@ -3,7 +3,7 @@ dataset-combined-*
 .idea
 test.mkv
 certconfig.js
-codeSignCert.pfx
+*.pfx
 # Logs
 logs
 *.log
