@@ -58,7 +58,12 @@ MP4 files are less flexible than MKV and only support one type of caption format
 
 ![app](screenshots/app.png)
 
-The app will begin to play the video subtitle-by-subtitle. All text in brackets (i.e. `[screams]`) is removed.
+The app will begin to play the video subtitle-by-subtitle.
+
+The subtitles are automatically cleaned up to aid assignment. All text in brackets (i.e. `[screams]`) is removed, as
+well as some other typical things in subtitles (dashes, html tags, excessive newlines). If the program removes actual
+dialog, there is a "revert to unfiltered" option when clicking "Revert Text". To accompany this, there is an "Edit Text"
+button to manually modify the subtitle.
 
 Each subtitle can be assigned to a "character". Each character will have their own dataset once the voice lines are
 exported. Voice lines must be assigned to a character if you wish for them to be exported.

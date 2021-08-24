@@ -232,14 +232,12 @@ window.electron.ipcinvoke("ripsub", videourl).then(subtitles => {
                 let edittext = document.querySelector("#edittext");
                 // add tooltip to edit button
                 new bootstrap.Tooltip(edittext, {
-                    placement: "top",
                     title: "Edit text",
                     html: true
                 })
                 let reverttext = document.querySelector("#reverttext");
                 // add tooltip to edit button
                 new bootstrap.Tooltip(reverttext, {
-                    placement: "top",
                     title: "Revert text",
                     html: true
                 })
